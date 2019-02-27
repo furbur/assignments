@@ -1,0 +1,301 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Save the Animals</title>
+  <style>
+  </style>
+</head>
+  <script src="pixi.min.js"></script>
+  <script src="animal.js"></script>
+<body>
+  <script type="text/javascript">
+
+    //Aliases
+    var Application = PIXI.Application,
+    loader = PIXI.loader,
+    resources = PIXI.loader.resources,
+    Sprite = PIXI.Sprite;
+
+    //Constants
+    var COLUMNS = 10;
+    var ROWS = 20;
+    var GRID_SIZE = 30;
+    var PLAY_AREA_PADDING = 30 * 5;
+
+    var state;
+    var animalArray = new Array();
+    var activeAnimal;
+    var nextAnimal;
+    var lastFall = 0;   
+    var fallSpeed;
+    var maxFallSpeed = 70;
+    var minFallSpeed = 5;
+    var lastInputTaken = 0;
+    var inputRepeatDelay = 700;
+    var inputRepeatDelayFast = 75;
+    var inputNextDelay = 0;
+    var score = 0;
+    var scoreText;
+    var levelText;
+    var nextAnimal;
+
+    const app = new PIXI.Application({ 
+        width: (PLAY_AREA_PADDING * 2) + GRID_SIZE * COLUMNS + GRID_SIZE,
+        height: GRID_SIZE * ROWS,
+        antialias: true,
+        transparent: false, 
+        resolution: 1
+      }
+    );
+
+    document.body.appendChild(app.view);
+
+    loader
+      .add("assets/animals.json")
+      .load(setup);
+
+    function setup() {
+      window.addEventListener('keydown', onKeyDown, false);
+      window.addEventListener('keyup', onKeyUp, false);
+
+      createHudTexts();
+      createBackGround();
+      
+      activeAnimal = new Animal(getRandomAnimal(), (app.renderer.view.width * 0.5) - (GRID_SIZE / 2), -GRID_SIZE * 2, getRandomRotation());
+      nextAnimal = new Animal(getRandomAnimal(),(app.renderer.view.width - PLAY_AREA_PADDING * 0.5), GRID_SIZE * 3, getRandomRotation());
+
+      fallSpeed = maxFallSpeed;
+      state = play;
+      app.ticker.add(delta => gameLoop(delta));
+    }
+    
+    function gameLoop(delta){
+      state(delta);
+    }
+
+    function play(delta) {
+      if(Date.now() - lastFall > fallSpeed) {
+          lastFall = Date.now();
+          if(activeAnimal.canMove("DOWN",animalArray)) {
+            activeAnimal.move("DOWN");
+          }
+          else {
+             whenCantMoveDown();
+          }
+      }
+    }
+
+    function whenCantMoveDown() {
+            if ( activeAnimal.shouldBeRemoved === true ) {
+              app.stage.removeChild(activeAnimal.sprite);
+              addScore(10);
+            } else {
+              animalArray.push(activeAnimal);
+            }
+
+            inputNextDelay = inputRepeatDelay;
+            activeAnimal = nextAnimal;
+            activeAnimal.setPosition((app.renderer.view.width * 0.5) - (GRID_SIZE / 2), - GRID_SIZE * 2);
+            nextAnimal = new Animal(getRandomAnimal(), (app.renderer.view.width - PLAY_AREA_PADDING * 0.5), GRID_SIZE * 3, getRandomRotation());
+    }
+  
+    function onKeyUp(e) {
+        var key = e.keyCode;
+        if (key === 37 || key === 39 || key === 40 || key === 38 || key === 32) { inputNextDelay = 0; }
+    }
+
+    function onKeyDown(e) {
+        var canControl = !(inputNextDelay > 0 && Date.now() - lastInputTaken < inputNextDelay);
+        var key = e.keyCode;
+
+        if(canControl) {
+            if (key === 37) 
+            {
+                //Left
+                if(activeAnimal.canMove("LEFT", animalArray))
+                {
+                    activeAnimal.move("LEFT");
+                }
+                lastInputTaken = Date.now();
+                if(inputNextDelay == 0) inputNextDelay = inputRepeatDelay;
+                else inputNextDelay = inputRepeatDelayFast;
+            }
+            if (key === 39) 
+            {
+                //Right
+                if(activeAnimal.canMove("RIGHT",animalArray)) 
+                {
+                    activeAnimal.move("RIGHT");
+                }
+                lastInputTaken = Date.now();
+                if(inputNextDelay == 0) inputNextDelay = inputRepeatDelay;
+                else inputNextDelay = inputRepeatDelayFast;
+            }
+            if (key === 40) 
+            {
+                //DOWN
+                if(activeAnimal.canMove("DOWN", animalArray)) 
+                {
+                    activeAnimal.move("DOWN");
+                }
+                else                    
+                {
+                    whenCantMoveDown();
+                }
+                lastInputTaken = Date.now();
+                if(inputNextDelay == 0) inputNextDelay = inputRepeatDelay;
+                else inputNextDelay = inputRepeatDelayFast;
+            }
+            if (key === 38) 
+            {
+                //Up
+                if(activeAnimal.canRotate(animalArray)) 
+                {
+                    activeAnimal.rotate();
+                }
+                lastInputTaken = Date.now();
+                if(inputNextDelay == 0) inputNextDelay = inputRepeatDelay;
+                else inputNextDelay = inputRepeatDelayFast;
+            }
+            if (key === 32) 
+            {
+                //Space
+                while(activeAnimal.canMove("DOWN",animalArray))
+                {
+                    activeAnimal.move("DOWN");
+                }
+                whenCantMoveDown();
+            }
+        }
+    }
+
+    function addScore(scoreValue) {
+        score += scoreValue;
+        if(score < 0) score = 0;            
+        scoreText.text = score;
+    }
+
+    function getRandomAnimal() {
+        var randNum = Math.floor(Math.random() * 7);
+        switch(randNum) {
+            case 0: return 'elephant';
+            case 1: return 'fox';
+            case 2: return 'moose';
+            case 3: return 'giraffe';
+            case 4: return 'crocodile';
+            case 5: return 'chicken';
+            case 6: return 'panda';
+        }
+    }
+
+    function getRandomRotation() {
+        return Math.floor(Math.random() * 3);
+    }
+
+    function createHudTexts() {
+      var scoreTextTitle = new PIXI.Text("Score", {
+          fontFamily: 'Arial',
+          fontSize: 30,
+          fill: 'white',
+          align: 'left'
+      });
+      scoreTextTitle.position.set(10, 5);
+
+      scoreText = new PIXI.Text("0", {
+          fontFamily: 'Arial',
+          fontSize: 50,
+          fill: 'white',
+          align: 'left'
+      });
+      scoreText.position.set(10, 40);
+
+      var nextPieceTitle = new PIXI.Text("Next", {
+          fontFamily: 'Arial',
+          fontSize: 30,
+          fill: 'white',
+          align: 'left'
+      });
+      nextPieceTitle.position.set(app.renderer.view.width -  ( PLAY_AREA_PADDING * 0.65 ) , 5);
+
+      app.stage.addChild(scoreText);
+      app.stage.addChild(scoreTextTitle);
+      app.stage.addChild(nextPieceTitle);
+    }
+
+    function createBackGround() {
+      var blockOffsetY = 0;
+      for (var x = 0; x <= ROWS; x++){
+        backgroundBlock = new Sprite.fromFrame(BLOCK_FRAME);
+        backgroundBlock.x = app.renderer.view.getBoundingClientRect().left + PLAY_AREA_PADDING - 15;
+        backgroundBlock.y = blockOffsetY;
+        app.stage.addChild(backgroundBlock);
+        blockOffsetY += 30;
+      }
+      
+      blockOffsetY = 0;
+
+      for (var x = 0; x <= ROWS; x++){
+        backgroundBlock = new Sprite.fromFrame(BLOCK_FRAME);
+        backgroundBlock.x = app.renderer.view.getBoundingClientRect().right - PLAY_AREA_PADDING - 15;
+        backgroundBlock.y = blockOffsetY;
+        app.stage.addChild(backgroundBlock);
+        blockOffsetY += 30;
+      }
+    }
+
+    function hitTestRectangle(r1, r2) {
+
+      //Define the variables we'll need to calculate
+      let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
+
+      //hit will determine whether there's a collision
+      hit = false;
+
+      //Find the center points of each sprite
+      r1.centerX = r1.x + r1.width / 2;
+      r1.centerY = r1.y + r1.height / 2;
+      r2.centerX = r2.x + r2.width / 2;
+      r2.centerY = r2.y + r2.height / 2;
+
+      //Find the half-widths and half-heights of each sprite
+      r1.halfWidth = r1.width / 2;
+      r1.halfHeight = r1.height / 2;
+      r2.halfWidth = r2.width / 2;
+      r2.halfHeight = r2.height / 2;
+
+      //Calculate the distance vector between the sprites
+      vx = r1.centerX - r2.centerX;
+      vy = r1.centerY - r2.centerY;
+
+      //Figure out the combined half-widths and half-heights
+      combinedHalfWidths = r1.halfWidth + r2.halfWidth;
+      combinedHalfHeights = r1.halfHeight + r2.halfHeight;
+
+      //Check for a collision on the x axis
+      if (Math.abs(vx) < combinedHalfWidths) {
+
+        //A collision might be occurring. Check for a collision on the y axis
+        if (Math.abs(vy) < combinedHalfHeights) {
+
+          //There's definitely a collision happening
+          hit = true;
+        } else {
+
+          //There's no collision on the y axis
+          hit = false;
+        }
+      } else {
+
+        //There's no collision on the x axis
+        hit = false;
+      }
+
+      //`hit` will be either `true` or `false`
+      return hit;
+    }
+  </script>
+</body>
+</html>
+
+
