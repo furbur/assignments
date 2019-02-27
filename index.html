@@ -29,8 +29,8 @@
     var nextAnimal;
     var lastFall = 0;   
     var fallSpeed;
-    var maxFallSpeed = 70;
-    var minFallSpeed = 5;
+    var maxFallSpeed = 100;
+    var minFallSpeed = 2;
     var lastInputTaken = 0;
     var inputRepeatDelay = 700;
     var inputRepeatDelayFast = 75;
@@ -62,8 +62,8 @@
       createHudTexts();
       createBackGround();
       
-      activeAnimal = new Animal(getRandomAnimal(), (app.renderer.view.width * 0.5) - (GRID_SIZE / 2), -GRID_SIZE * 2, getRandomRotation());
-      nextAnimal = new Animal(getRandomAnimal(),(app.renderer.view.width - PLAY_AREA_PADDING * 0.5), GRID_SIZE * 3, getRandomRotation());
+      activeAnimal = new Animal(getRandomAnimal(), (app.renderer.view.width * 0.5) - (GRID_SIZE / 2), -GRID_SIZE * 2);
+      nextAnimal = new Animal(getRandomAnimal(),(app.renderer.view.width - PLAY_AREA_PADDING * 0.5), GRID_SIZE * 3);
 
       fallSpeed = maxFallSpeed;
       state = play;
@@ -97,7 +97,7 @@
             inputNextDelay = inputRepeatDelay;
             activeAnimal = nextAnimal;
             activeAnimal.setPosition((app.renderer.view.width * 0.5) - (GRID_SIZE / 2), - GRID_SIZE * 2);
-            nextAnimal = new Animal(getRandomAnimal(), (app.renderer.view.width - PLAY_AREA_PADDING * 0.5), GRID_SIZE * 3, getRandomRotation());
+            nextAnimal = new Animal(getRandomAnimal(), (app.renderer.view.width - PLAY_AREA_PADDING * 0.5), GRID_SIZE * 3);
     }
   
     function onKeyUp(e) {
@@ -187,10 +187,6 @@
             case 5: return 'chicken';
             case 6: return 'panda';
         }
-    }
-
-    function getRandomRotation() {
-        return Math.floor(Math.random() * 3);
     }
 
     function createHudTexts() {

@@ -11,12 +11,11 @@ var height;
 var width;
 var shouldBeRemoved;
 
-Animal = function(type, posX, posY, rotation) {
+Animal = function(type, posX, posY) {
     this.animalType = type;
     this.posX = posX;
     this.posY = posY;
     this.sprite = PIXI.Sprite;
-    this.rotation = rotation;
     this.create(true);
 }
  
@@ -92,9 +91,13 @@ Animal.prototype =
         this.sprite.position.x = this.posX;
         this.sprite.position.y = this.posY;
         this.sprite.anchor.set(0.5);
-        this.rotate();
 
         if(newSprites) {
+            var rotation = this.getRandomRotation();
+            for(var i = 0; i < rotation; i++) {
+                this.rotate();
+            }
+
             app.stage.addChild(this.sprite);
         }
     },
@@ -167,6 +170,10 @@ Animal.prototype =
         if (this.animalType === previousBlocks.animalType){
             return true;
         }
+    },
+
+    getRandomRotation : function() {
+        return Math.floor(Math.random() * 3);
     },
 };
 
